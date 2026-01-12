@@ -1,0 +1,560 @@
+{
+  "name": "Upwork Automation Enhanced",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/nahom.network~upwork-job-finder/run-sync-get-dataset-items?token={{ $env.APIFY_API_TOKEN }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"n8n OR automation OR AI OR chatbot OR Twilio OR Retell OR workflow\",\n  \"maxJobAge\": {\n    \"value\": 6,\n    \"unit\": \"hours\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        272,
+        144
+      ],
+      "id": "e1ec0803-3d53-4fb2-8427-fd03d2b79148",
+      "name": "Fetch Upwork Jobs (Apify)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DiWTsm8gtjzmqeSm",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dbd4dbbe-4f44-4db6-b155-534e848b13a9",
+              "name": "title",
+              "value": "={{ $json.title }}\n",
+              "type": "string"
+            },
+            {
+              "id": "1e6372fe-feb6-4f6b-bd21-5d78bf26b4b7",
+              "name": "description",
+              "value": "={{ $json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "f487bf4c-eece-435e-8ac4-39028cb262fe",
+              "name": "url",
+              "value": "={{ $json.URL || \"Not provided\"}}\n",
+              "type": "string"
+            },
+            {
+              "id": "53be8665-16bb-42a0-8529-0f3ede70137e",
+              "name": "jobType",
+              "value": "={{ $json.type }}\n",
+              "type": "string"
+            },
+            {
+              "id": "f7d6d248-2193-4684-8406-5b112a145abf",
+              "name": "experienceLevel",
+              "value": "=\n{{ $json.durationLabel }}",
+              "type": "string"
+            },
+            {
+              "id": "budget-field",
+              "name": "budget",
+              "value": "={{ $json.amount.amount }}",
+              "type": "string"
+            },
+            {
+              "id": "hourly-field",
+              "name": "hourlyRate",
+              "value": "={{ $json.hourlyBudget }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        496,
+        144
+      ],
+      "id": "1ef2e361-7489-46a7-a784-2f00a9f54510",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "time-filter",
+              "leftValue": "=Value 1: {{ $json.postedAt }} Operation: is after Value 2: {{ $now.minus({ hours: 6 }) }}",
+              "rightValue": "6 hours",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "6caf44b4-b004-4c0c-860e-b48ae5972870",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        720,
+        144
+      ],
+      "id": "efbd7700-205f-4418-ab9a-83397b5d3e93",
+      "name": "Filter Jobs by Time"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        368
+      ],
+      "id": "acae5e40-1122-402b-b54d-158ced568043",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "THJ3XdeDzhe4gJtz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"score\": 8,\n  \"priority\": \"High\",\n  \"reasoning\": \"Technical explanation of why this job is a good fit\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        384
+      ],
+      "id": "f1a5eecb-85b4-422a-ae6e-e5e776d383ee",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.title }}\n{{ $json.description }}\n{{ $json.url }}\n{{ $json.jobType }}\n{{ $json.experienceLevel }}\n{{ $json.budget }}\n{{ $json.hourlyRate }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an automation expert evaluating Upwork jobs for relevance to:\n- n8n workflow automation\n- AI automation and integration\n- Chatbots and conversational AI\n- Twilio / Retell voice agents\n- API integrations and workflow systems\n- CRM automation\n- Zapier/Make alternatives\n\nAnalyze the job below and provide a precise evaluation.\n\n### Scoring Guidelines:\n\nHIGH Priority (8-10/10):\n- Directly mentions n8n, automation, AI workflows, chatbots, Twilio, Retell, or voice agents\n- Clear scope that can be completed quickly (under 48 hours)\n- Reasonable budget ($100+ or $20+/hour)\n- Client has good history or payment verification\n- Technical requirements match automation skills\n\nMEDIUM Priority (5-7/10):\n- Some automation elements but unclear scope\n- Lower budget but good for portfolio building\n- New client with no history\n- Longer timeline but relevant skills\n- API integration or workflow work\n\nLOW Priority (1-4/10):\n- Not automation-related\n- WordPress/graphic design/generic dev work\n- Very low budget or poor client indicators\n- Unclear requirements or red flags\n- Skills mismatch\n\n### Job Details:\nTitle: {{ $json.title }}\nDescription: {{ $json.description }}\nURL: {{ $json.url }}\nPosted: {{ $json.posted }}\nJob Type: {{ $json.jobType }}\nExperience Level: {{ $json.experienceLevel }}\nBudget: {{ $json.budget }}\nHourly Rate: {{ $json.hourlyRate }}\n\n### Output Format (STRICT JSON):\n{\n  \"score\": 1-10 (number only),\n  \"priority\": \"High\" | \"Medium\" | \"Low\",\n  \"reasoning\": \"One concise paragraph explaining the score based on automation relevance, client quality, budget, and speed of completion\"\n}\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1120,
+        144
+      ],
+      "id": "e10071e2-a74c-44a9-840e-3c42f7392de6",
+      "name": "AI Score Job"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "{{ $env.AIRTABLE_BASE_ID }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "{{ $env.AIRTABLE_TABLE_NAME }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Job Title": "={{ $('Fetch Upwork Jobs (Apify)').item.json.title }}",
+            "Job Description": "= {{ $('Fetch Upwork Jobs (Apify)').item.json.description }}",
+            "Score": "={{ $json.output.score }}\n",
+            "Reasoning": "={{ $json.output.reasoning }} {{ $json.output.reasoning }}",
+            "Budget": "={{ $('Edit Fields').item.json.budget }}",
+            "Posted Time": "2026-01-12T15:17:33",
+            "Priority": "={{ $('AI Score Job').item.json.output.priority.replace(/[\\n\\r\\t\\s]+$/g, '') }} "
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Posted Time",
+              "displayName": "Posted Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1472,
+        144
+      ],
+      "id": "af63f1d9-235f-4aee-9d05-f524f35e49ef",
+      "name": "Save to Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "VMf6ZkpZELKJ9pWw",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "high-priority-check",
+              "leftValue": "={{ $('AI Score Job').item.json.output.priority.replace(/[\\n\\r\\t\\s]+$/g, '') }}",
+              "rightValue": "High",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        144
+      ],
+      "id": "b91f97f1-b573-4e0c-b1ab-57471d619d34",
+      "name": "Check If High Priority"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 Upwork Automation Workflow\n\n### Features:\n✅ Scrapes Upwork jobs every 8 hours\n✅ Filters jobs posted in last 6 hours\n✅ AI-powered scoring (1-10)\n✅ Priority classification (High/Medium/Low)\n✅ Automatic Airtable logging\n✅ Slack alerts for high-priority jobs\n\n### Configuration Required:\n1. Apify API credentials\n2. OpenAI API key (GPT-4o)\n3. Airtable OAuth connection\n4. Slack webhook (optional)\n\n### Enhancements:\n- Budget pre-filtering\n- Time-based job filtering\n- Enhanced AI scoring prompt\n- Error handling",
+        "height": 624,
+        "width": 2128,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "23bf4909-8ca5-4cbe-92e2-c1710f4247bd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        128
+      ],
+      "id": "ef7039c2-e5b1-4436-bf1c-29dddb932383",
+      "name": "Every 8 Hours"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U0A88HCCBC4",
+          "mode": "list",
+          "cachedResultName": "sigarsahil321"
+        },
+        "text": "=🆕 *New Upwork Job Found*\n\n*Title:* {{ $('Fetch Upwork Jobs (Apify)').item.json.title }}\n\n*Score:* {{ $('AI Score Job').item.json.output.score }}\n*Priority:* {{ $('AI Score Job').item.json.output.priority }}\n\n*Budget:* {{ $json.budget || \"Not specified\" }}\n\n*Description:*{{ $('Fetch Upwork Jobs (Apify)').item.json.description }}\n\n🔗 *Job Link:* {{ $('Edit Fields').item.json.url }}\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        1904,
+        128
+      ],
+      "id": "3d135858-81e7-46cb-972b-a1c637bacab2",
+      "name": "Send Slack Alert",
+      "webhookId": "801c1e45-c307-44ce-9104-73a34fd06278",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "uYrqQ2czxHXPV9EG",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        880,
+        368
+      ],
+      "id": "39cffb8e-ebd5-483a-ab48-ab600b1fe78b",
+      "name": "Limit"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Fetch Upwork Jobs (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Filter Jobs by Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Jobs by Time": {
+      "main": [
+        [
+          {
+            "node": "AI Score Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Score Job",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Score Job",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Score Job": {
+      "main": [
+        [
+          {
+            "node": "Save to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Airtable": {
+      "main": [
+        [
+          {
+            "node": "Check If High Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If High Priority": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Every 8 Hours": {
+      "main": [
+        [
+          {
+            "node": "Fetch Upwork Jobs (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "aa13efc0-2d42-4818-95d3-f9504df45342",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "31e8f840cefeebe3ec37df7b542b3ed6e2e99e74973e09d903de01a5c0a76689"
+  },
+  "id": "LCrKQm6nXdN8LXUwSSOWR",
+  "tags": [
+    {
+      "name": "automation",
+      "id": "mjFjRrDSpWNAOMIR",
+      "updatedAt": "2026-01-12T09:32:44.318Z",
+      "createdAt": "2026-01-12T09:32:44.318Z"
+    },
+    {
+      "name": "upwork",
+      "id": "3TUCiPWrENtImAB3",
+      "updatedAt": "2026-01-12T09:32:44.280Z",
+      "createdAt": "2026-01-12T09:32:44.280Z"
+    }
+  ]
+}
