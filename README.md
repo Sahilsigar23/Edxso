@@ -349,15 +349,6 @@ Potential enhancements for production deployment:
 9. **Webhook Triggers**: Real-time processing instead of scheduled
 10. **Error Recovery**: Automatic retry logic for failed API calls
 
-## 📊 Performance Metrics
-
-Expected workflow performance:
-
-- **Execution Time**: 30-60 seconds per run (depending on jobs found)
-- **API Calls**: 1 Apify + N OpenAI calls (where N = number of jobs)
-- **Cost per Run**: ~$0.10-$0.50 (varies with OpenAI usage)
-- **Jobs Processed**: 5-20 per execution (varies by availability)
-
 
 
 
