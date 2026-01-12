@@ -58,7 +58,7 @@ You'll need accounts and API keys for:
 1. **Apify** - For scraping Upwork jobs
    - Sign up: https://apify.com/
    - Get API token from: https://console.apify.com/account/integrations
-   - **Note**: We use the FREE actor `nahom.network/upwork-job-finder` instead of the paid `neatrat~upwork-job-scraper` to avoid credit costs
+   - **Note**: We use the FREE actor `nahom.network~upwork-job-finder` instead of the paid `neatrat~upwork-job-scraper` to avoid credit costs
 
 2. **OpenAI** - For AI-powered job scoring
    - Sign up: https://platform.openai.com/
